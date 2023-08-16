@@ -25,13 +25,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Set Environment
-      run: echo "set env"
-      env:
-        PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-        GOERLI_URL: ${{ secrets.GOERLI_URL }}
-        MAINNET_URL: ${{ secrets.MAINNET_URL }}
-        ETHER_SCAN_APIKEY: ${{ secrets.ETHER_SCAN_APIKEY }}
     - name: Use Node.js ${{ matrix.node_version }}
       uses: actions/setup-node@v1
       with:
