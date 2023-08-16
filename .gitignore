@@ -2,7 +2,9 @@
 node_modules
 
 # hardhat
-abi
+@chainlink
+@openzeppelin
+contracts
 artifacts
 cache
 deployments
