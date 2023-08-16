@@ -25,7 +25,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Set Env
+    - name: Set Environment
+      run: echo "set env"
       env:
         PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         GOERLI_URL: ${{ secrets.GOERLI_URL }}
