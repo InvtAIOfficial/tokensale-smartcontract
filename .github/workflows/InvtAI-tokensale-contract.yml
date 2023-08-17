@@ -30,7 +30,8 @@ jobs:
       with:
         node-version: ${{ matrix.node_version }}
     - run: npm install -g yarn
-    - run: yarn --frozen-lockfile
+    - run: yarn --frozen-lockfile    
+    - run: mkdir -p "data/abi"
     - name: yarn test
       run: |
         yarn run test
