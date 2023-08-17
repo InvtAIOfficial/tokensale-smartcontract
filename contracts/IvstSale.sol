@@ -137,6 +137,9 @@ contract IvstSale is ReentrancyGuard, Whitelist {
     // Event when harvest enabled status flipped
     event HarvestAllowedFlipped(bool current);
 
+    // Event when offering token is set
+    event OfferingTokenSet(address tokenAddress);
+
     // Modifier to prevent contracts to participate
     modifier notContract() {
         require(!_isContract(msg.sender), "contract not allowed");
@@ -169,11 +172,10 @@ contract IvstSale is ReentrancyGuard, Whitelist {
     /**
      * @notice Constructor
      */
-    constructor(address _offeringToken, address _ethPriceFeed) public {
+    constructor(address _ethPriceFeed) public {
         (, int256 price, , , ) = AggregatorV3Interface(_ethPriceFeed).latestRoundData();
         require(price > 0, "invalid price feed");
 
-        offeringToken = IERC20(_offeringToken);
         ethPriceFeed = _ethPriceFeed;
     }
 
@@ -329,6 +331,19 @@ contract IvstSale is ReentrancyGuard, Whitelist {
         IERC20(_tokenAddress).safeTransfer(msg.sender, _tokenAmount);
 
         emit AdminTokenRecovery(_tokenAddress, _tokenAmount);
+    }
+
+    /**
+     * @notice It allows the admin to set offering token before sale start
+     * @param _tokenAddress: the address of offering token
+     * @dev This function is only callable by admin.
+     */
+    function setOfferingToken(address _tokenAddress) external onlyOwner {
+        require(_tokenAddress != address(0), "OfferingToken: Zero address");
+
+        offeringToken = IERC20(_tokenAddress);
+
+        emit OfferingTokenSet(_tokenAddress);
     }
 
     /**

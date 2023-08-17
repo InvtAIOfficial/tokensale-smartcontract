@@ -46,7 +46,12 @@ contract("Sale", ([admin, alice, bob, carol, david]) => {
     ethPriceFeed = await MockChainlinkAggregator.new(8, "200000000000", {
       from: admin,
     });
-    mockIFO  = await IvstSale.new(mockOC.address, ethPriceFeed.address, {
+    mockIFO  = await IvstSale.new(ethPriceFeed.address, {
+      from: admin,
+    });
+
+    // Set offering token
+    await mockIFO.setOfferingToken(mockOC.address, {
       from: admin,
     });
 
