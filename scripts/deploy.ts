@@ -1,6 +1,6 @@
 import helper from "./utils/helpers";
 
-const ethPriceFeed = "0x"
+const ethPriceFeed = "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612" // Arbitrum mainnet ETH / USD feed
 
 // The main deployment script
 const main = async () => {

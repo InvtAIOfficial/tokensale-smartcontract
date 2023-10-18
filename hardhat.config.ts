@@ -16,6 +16,7 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY!;
 const GOERLI_URL = process.env.GOERLI_URL;
 const MAINNET_URL = process.env.MAINNET_URL;
 const ARBITRUM_GOERLI_URL = process.env.ARBITRUM_GOERLI_URL;
+const ARBITRUM_URL = process.env.ARBITRUM_URL;
 const ETHER_SCAN_APIKEY = process.env.ETHER_SCAN_APIKEY;
 
 
@@ -33,6 +34,10 @@ const config: HardhatUserConfig = {
     },
     arbitrumGoerli: {
       url: ARBITRUM_GOERLI_URL,
+      accounts: [PRIVATE_KEY]
+    },
+    arbitrum: {
+      url: ARBITRUM_URL,
       accounts: [PRIVATE_KEY]
     },
   },
