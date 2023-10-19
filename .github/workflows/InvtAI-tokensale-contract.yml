@@ -31,12 +31,10 @@ jobs:
         node-version: ${{ matrix.node_version }}
     - name: Install dependencies
       run: |
-        npm install -g yarn
-        yarn install
+        npm install -s
         mkdir -p "data/abi"
     - name: Run testcase
-      run: |
-        yarn test
+      run: npm run test
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           GOERLI_URL: ${{ secrets.GOERLI_URL }}

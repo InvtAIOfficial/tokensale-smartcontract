@@ -15,3 +15,5 @@ deployments
 contracts/.deps
 .env
 .env.test
+.yarn.lock
+package-lock.json
