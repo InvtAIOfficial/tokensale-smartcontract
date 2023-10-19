@@ -35,10 +35,10 @@ jobs:
         mkdir -p "data/abi"
     - name: Run testcase
       run: npm run test
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-          GOERLI_URL: ${{ secrets.GOERLI_URL }}
-          MAINNET_URL: ${{ secrets.MAINNET_URL }}
-          ARBITRUM_GOERLI_URL: ${{ secrets.ARBITRUM_GOERLI_URL }}
-          ARBITRUM_URL: ${{ secrets.ARBITRUM_URL }}
-          ETHER_SCAN_APIKEY: ${{ secrets.ETHER_SCAN_APIKEY }}
+      env:
+        PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        GOERLI_URL: ${{ secrets.GOERLI_URL }}
+        MAINNET_URL: ${{ secrets.MAINNET_URL }}
+        ARBITRUM_GOERLI_URL: ${{ secrets.ARBITRUM_GOERLI_URL }}
+        ARBITRUM_URL: ${{ secrets.ARBITRUM_URL }}
+        ETHER_SCAN_APIKEY: ${{ secrets.ETHER_SCAN_APIKEY }}
