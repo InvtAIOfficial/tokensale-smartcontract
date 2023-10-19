@@ -17,10 +17,10 @@ on:
 jobs:
   test:
     name: Test on node ${{ matrix.node_version }} and ${{ matrix.os }}
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        node_version: ['16']
+        node_version: ['18']
         os: [ubuntu-latest]
 
     steps:
@@ -29,9 +29,18 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node_version }}
-    - run: npm install -g yarn
-    - run: yarn --frozen-lockfile    
-    - run: mkdir -p "data/abi"
-    - name: yarn test
+    - name: Install dependencies
       run: |
-        yarn run test
+        npm install -g yarn
+        yarn install
+        mkdir -p "data/abi"
+    - name: Run testcase
+      run: |
+        yarn test
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          GOERLI_URL: ${{ secrets.GOERLI_URL }}
+          MAINNET_URL: ${{ secrets.MAINNET_URL }}
+          ARBITRUM_GOERLI_URL: ${{ secrets.ARBITRUM_GOERLI_URL }}
+          ARBITRUM_URL: ${{ secrets.ARBITRUM_URL }}
+          ETHER_SCAN_APIKEY: ${{ secrets.ETHER_SCAN_APIKEY }}
