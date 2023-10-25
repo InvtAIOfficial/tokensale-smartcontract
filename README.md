@@ -10,3 +10,13 @@ hardhat compile
 
 ```
 hardhat --network mainnet deploy
+```
+
+deployment(check price seed address)
+```
+npx hardhat run --network goerli scripts/deploy.ts
+```
+contract verify
+```
+ npx hardhat verify --network arbitrumGoerli <saleContractAddress> <priceSeed>
+```
