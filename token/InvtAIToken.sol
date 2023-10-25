@@ -112,11 +112,7 @@ abstract contract Ownable is Context {
     }
 }
 
-
-// File @openzeppelin/contracts/token/ERC20/IERC20.sol@v4.9.3
-
-// Original license: SPDX_License_Identifier: MIT
-// OpenZeppelin Contracts (last updated v4.9.0) (token/ERC20/IERC20.sol)
+// SPDX_License_Identifier: MIT
 
 pragma solidity ^0.8.0;
 
@@ -195,10 +191,7 @@ interface IERC20 {
 }
 
 
-// File @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol@v4.9.3
-
-// Original license: SPDX_License_Identifier: MIT
-// OpenZeppelin Contracts v4.4.1 (token/ERC20/extensions/IERC20Metadata.sol)
+// SPDX_License_Identifier: MIT
 
 pragma solidity ^0.8.0;
 
@@ -224,11 +217,7 @@ interface IERC20Metadata is IERC20 {
     function decimals() external view returns (uint8);
 }
 
-
-// File @openzeppelin/contracts/token/ERC20/ERC20.sol@v4.9.3
-
-// Original license: SPDX_License_Identifier: MIT
-// OpenZeppelin Contracts (last updated v4.9.0) (token/ERC20/ERC20.sol)
+// SPDX_License_Identifier: MIT
 
 pragma solidity ^0.8.0;
 
@@ -241,17 +230,9 @@ pragma solidity ^0.8.0;
  * that a supply mechanism has to be added in a derived contract using {_mint}.
  * For a generic mechanism see {ERC20PresetMinterPauser}.
  *
- * TIP: For a detailed writeup see our guide
- * https://forum.openzeppelin.com/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
  *
  * The default value of {decimals} is 18. To change this, you should override
  * this function so it returns a different value.
- *
- * We have followed general OpenZeppelin Contracts guidelines: functions revert
- * instead returning `false` on failure. This behavior is nonetheless
- * conventional and does not conflict with the expectations of ERC20
- * applications.
  *
  * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
  * This allows applications to reconstruct the allowance for all accounts just
@@ -2477,12 +2458,12 @@ contract OFTV2 is BaseOFTV2, ERC20 {
     }
 }
 
-// Original license: SPDX_License_Identifier: MIT
+// SPDX_License_Identifier: MIT
 
 pragma solidity ^0.8.0;
 
 // @dev mock OFTV2 demonstrating how to inherit OFTV2
-contract InvtAIOFT is OFTV2 {
+contract InvtAI is OFTV2 {
     constructor(address _layerZeroEndpoint, uint _initialSupply, uint8 _sharedDecimals) OFTV2("InvtAI", "INA", _sharedDecimals, _layerZeroEndpoint) {
         _mint(_msgSender(), _initialSupply);
     }

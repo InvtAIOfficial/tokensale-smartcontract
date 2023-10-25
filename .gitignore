@@ -4,7 +4,7 @@ node_modules
 # hardhat
 @chainlink
 @openzeppelin
-#contracts
+contracts
 artifacts
 cache
 deployments
