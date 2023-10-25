@@ -2464,7 +2464,11 @@ pragma solidity ^0.8.0;
 
 // @dev mock OFTV2 demonstrating how to inherit OFTV2
 contract InvtAI is OFTV2 {
-    constructor(address _layerZeroEndpoint, uint _initialSupply, uint8 _sharedDecimals) OFTV2("InvtAI", "INA", _sharedDecimals, _layerZeroEndpoint) {
-        _mint(_msgSender(), _initialSupply);
+    constructor(address _endpoint, uint _initialSupply) OFTV2("InvtAI", "INA", 8, _endpoint) {
+        require(_endpoint != address(0), "invalid LZ Endpoint");
+
+        if (_initialSupply != 0) {
+            _mint(_msgSender(), _initialSupply);
+        }
     }
 }
