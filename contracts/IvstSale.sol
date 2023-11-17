@@ -10,6 +10,14 @@ import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 
 import "./utils/WhiteList.sol";
 
+interface IERC20DetailedBytes is IERC20 {
+	function name() external view returns (bytes32);
+
+	function symbol() external view returns (bytes32);
+
+	function decimals() external view returns (uint8);
+}
+
 /**
  * @title IvstSale
  */
@@ -67,8 +75,8 @@ contract IvstSale is ReentrancyGuard, Whitelist {
         bool claimedPool; // Whether the user has claimed (default: false) for pool
     }
 
-    // vesting startTime, everyone will be started at same timestamp
-    uint256 public vestingStartTime;
+    // vesting startTime, everyone will be started at same timestamp. pid => startTime
+    mapping(uint256 => uint256) public vestingStartTime;
 
     // A flag for vesting is being revoked
     bool public vestingRevoked;
@@ -265,8 +273,8 @@ contract IvstSale is ReentrancyGuard, Whitelist {
         _userInfo[msg.sender][_pid].claimedPool = true;
 
         // Updates the vesting startTime
-        if (vestingStartTime == 0) {
-            vestingStartTime = block.timestamp;
+        if (vestingStartTime[_pid] == 0) {
+            vestingStartTime[_pid] = block.timestamp;
         }
 
         uint256 offeringTokenAmount = _calculateOfferingAmountPool(msg.sender, _pid);
@@ -340,6 +348,7 @@ contract IvstSale is ReentrancyGuard, Whitelist {
      */
     function setOfferingToken(address _tokenAddress) external onlyOwner {
         require(_tokenAddress != address(0), "OfferingToken: Zero address");
+        require(address(offeringToken) == address(0), "OfferingToken: already set");
 
         offeringToken = IERC20(_tokenAddress);
 
@@ -380,6 +389,7 @@ contract IvstSale is ReentrancyGuard, Whitelist {
         require(_vestingDuration > 0, "duration must exceeds 0");
         require(_vestingSlicePeriodSeconds >= 1, "slicePeriodSeconds must be exceeds 1");
         require(_vestingSlicePeriodSeconds <= _vestingDuration, "slicePeriodSeconds must be interior duration");
+        require(block.timestamp < _startTime && _startTime < _endTime, "invalid time");
 
         _poolInformation[_pid].startTime = _startTime;
         _poolInformation[_pid].endTime = _endTime;
@@ -411,7 +421,7 @@ contract IvstSale is ReentrancyGuard, Whitelist {
      * @return raisingAmountPool: amount of LP tokens raised (in LP tokens)
      * @return offeringAmountPool: amount of tokens offered for the pool (in offeringTokens)
      * @return limitPerUserInLP; // limit of tokens per user (if 0, it is ignored)
-     * @return totalAmountPool: total amount pool deposited (in LP tokens)
+     * @return totalAmountPool: total amount pool deposited (in USD)
      */
     function viewPoolInformation(uint256 _pid)
         external
@@ -597,7 +607,7 @@ contract IvstSale is ReentrancyGuard, Whitelist {
     function addPaymentToken(address _token, address _feed, uint8 _decimal) external onlyOwner {
         require(!isPaymentToken[_token], "already added");
         require(_feed != address(0), "invalid feed address");
-        require(_decimal > 0, "no zero decimal");
+        require(_decimal == IERC20DetailedBytes(_token).decimals(), "incorrect decimal");
 
         (, int256 price, , , ) = AggregatorV3Interface(_feed).latestRoundData();
         require(price > 0, "invalid price feed");
@@ -618,15 +628,19 @@ contract IvstSale is ReentrancyGuard, Whitelist {
 
         isPaymentToken[_token] = false;
 
-        uint256 index = 0;
+        uint256 index = allPaymentTokens.length;
         for (uint256 i = 0; i < allPaymentTokens.length; i++) {
             if (allPaymentTokens[i] == _token) {
                 index = i;
                 break;
             }
         }
+        require(index != allPaymentTokens.length, "token doesn't exist");
+
         allPaymentTokens[index] = allPaymentTokens[allPaymentTokens.length - 1];
         allPaymentTokens.pop();
+        delete paymentTokenDecimal[_token];
+        delete priceFeed[_token];
 
         emit PaymentTokenRevoked(_token);
     }
@@ -636,7 +650,7 @@ contract IvstSale is ReentrancyGuard, Whitelist {
      */
     function addStableToken(address _token, uint8 _decimal) external onlyOwner {
         require(!isStableToken[_token], "already added");
-        require(_decimal > 0, "no zero decimal");
+        require(_decimal == IERC20DetailedBytes(_token).decimals(), "incorrect decimal");
 
         isStableToken[_token] = true;
         allStableTokens.push(_token);
@@ -653,15 +667,18 @@ contract IvstSale is ReentrancyGuard, Whitelist {
 
         isStableToken[_token] = false;
 
-        uint256 index = 0;
+        uint256 index = allStableTokens.length;
         for (uint256 i = 0; i < allStableTokens.length; i++) {
             if (allStableTokens[i] == _token) {
                 index = i;
                 break;
             }
         }
+        require(index != allStableTokens.length, "token doesn't exist");
+
         allStableTokens[index] = allStableTokens[allStableTokens.length - 1];
         allStableTokens.pop();
+        delete paymentTokenDecimal[_token];
 
         emit StableTokenRevoked(_token);
     }
@@ -746,7 +763,7 @@ contract IvstSale is ReentrancyGuard, Whitelist {
         if (vestingSchedule.pid == _pid) {
             return vestingScheduleId;
         } else {
-            return computeVestingScheduleIdForAddressAndIndex(_holder, 1);
+            return computeVestingScheduleIdForAddressAndIndex(_holder, _pid);
         }
     }
 
@@ -763,15 +780,15 @@ contract IvstSale is ReentrancyGuard, Whitelist {
      */
     function _computeReleasableAmount(VestingSchedule memory _vestingSchedule) internal view returns (uint256) {
         uint256 currentTime = getCurrentTime();
-        if (currentTime < vestingStartTime + _poolInformation[_vestingSchedule.pid].vestingCliff) {
+        if (currentTime < vestingStartTime[_vestingSchedule.pid] + _poolInformation[_vestingSchedule.pid].vestingCliff) {
             return 0;
         } else if (
-            currentTime >= vestingStartTime.add(_poolInformation[_vestingSchedule.pid].vestingDuration) ||
+            currentTime >= vestingStartTime[_vestingSchedule.pid].add(_poolInformation[_vestingSchedule.pid].vestingDuration) ||
             vestingRevoked
         ) {
             return _vestingSchedule.amountTotal.sub(_vestingSchedule.released);
         } else {
-            uint256 timeFromStart = currentTime.sub(vestingStartTime);
+            uint256 timeFromStart = currentTime.sub(vestingStartTime[_vestingSchedule.pid]);
             uint256 secondsPerSlice = _poolInformation[_vestingSchedule.pid].vestingSlicePeriodSeconds;
             uint256 vestedSlicePeriods = timeFromStart.div(secondsPerSlice);
             uint256 vestedSeconds = vestedSlicePeriods.mul(secondsPerSlice);
@@ -834,7 +851,7 @@ contract IvstSale is ReentrancyGuard, Whitelist {
      */
     function _getUserAllocationPool(address _user, uint8 _pid) internal view returns (uint256) {
         if (_poolInformation[_pid].totalAmountPool > 0) {
-            return _userInfo[_user][_pid].amountPool.mul(1e18).div(_poolInformation[_pid].totalAmountPool.mul(1e6));
+            return _userInfo[_user][_pid].amountPool.mul(1e12).div(_poolInformation[_pid].totalAmountPool);
         } else {
             return 0;
         }
