@@ -758,13 +758,16 @@ contract IvstSale is ReentrancyGuard, Whitelist {
      */
     function computeVestingScheduleIdForAddressAndPid(address _holder, uint256 _pid) external view returns (bytes32) {
         require(_pid < NUMBER_POOLS, "ComputeVestingScheduleId: Non valid pool id");
-        bytes32 vestingScheduleId = computeVestingScheduleIdForAddressAndIndex(_holder, 0);
-        VestingSchedule memory vestingSchedule = vestingSchedules[vestingScheduleId];
-        if (vestingSchedule.pid == _pid) {
-            return vestingScheduleId;
-        } else {
-            return computeVestingScheduleIdForAddressAndIndex(_holder, _pid);
+
+        for (uint8 i = 0; i < NUMBER_POOLS; i++) {
+            bytes32 vestingScheduleId = computeVestingScheduleIdForAddressAndIndex(_holder, i);
+            VestingSchedule memory vestingSchedule = vestingSchedules[vestingScheduleId];
+            if (vestingSchedule.isVestingInitialized == true && vestingSchedule.pid == _pid) {
+                return vestingScheduleId;
+            }
         }
+
+        return computeNextVestingScheduleIdForHolder(_holder);
     }
 
     /**
