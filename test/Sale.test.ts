@@ -20,6 +20,24 @@ contract("Sale", ([admin, alice, bob, carol, david]) => {
   let raisingAmountPool0 = parseEther("1000");
   let limitPerUserInLp = parseEther("500");
 
+  // IFO Pool 1
+  let offeringAmountPool1 = parseEther("20000");
+  let raisingAmountPool1 = parseEther("2000");
+  let _startTime1;
+  let _endTime1;
+
+  // IFO Pool 2
+  let offeringAmountPool2 = parseEther("20000");
+  let raisingAmountPool2 = parseEther("2000");
+  let _startTime2;
+  let _endTime2;
+
+  // IFO Pool 3
+  let offeringAmountPool3 = parseEther("30000");
+  let raisingAmountPool3 = parseEther("3000");
+  let _startTime3;
+  let _endTime3;
+
   // VARIABLES
 
   // Contracts
@@ -56,7 +74,7 @@ contract("Sale", ([admin, alice, bob, carol, david]) => {
     });
 
     // Transfer offering token to pool
-    await mockOC.faucet(mockIFO.address, offeringAmountPool0);
+    await mockOC.faucet(mockIFO.address, offeringAmountPool0.add(offeringAmountPool1).add(offeringAmountPool2).add(offeringAmountPool3));
   });
 
   describe("Initial contract parameters for all contracts", async () => {
@@ -85,6 +103,54 @@ contract("Sale", ([admin, alice, bob, carol, david]) => {
       });
 
       assert.equal(String(await mockIFO.totalTokensOffered()), String(offeringAmountPool0));
+
+      _startTime1 = _endTime;
+      _endTime1 = _startTime1.add(new BN("3650"));
+      await mockIFO.setPool(
+        _startTime1,
+        _endTime1,
+        offeringAmountPool1,
+        raisingAmountPool1,
+        limitPerUserInLp,
+        "1",
+        "50",
+        "0",
+        "1800",
+        "1",
+        { from: admin }
+      );
+
+      _startTime2 = _endTime1;
+      _endTime2 = _startTime2.add(new BN("3650"));
+      await mockIFO.setPool(
+        _startTime2,
+        _endTime2,
+        offeringAmountPool2,
+        raisingAmountPool2,
+        limitPerUserInLp,
+        "2",
+        "50",
+        "0",
+        "1800",
+        "1",
+        { from: admin }
+      );
+
+      _startTime3 = _endTime2;
+      _endTime3 = _startTime3.add(new BN("3650"));
+      await mockIFO.setPool(
+        _startTime3,
+        _endTime3,
+        offeringAmountPool3,
+        raisingAmountPool3,
+        limitPerUserInLp,
+        "3",
+        "50",
+        "0",
+        "1800",
+        "1",
+        { from: admin }
+      );
     });
   });
 
@@ -107,7 +173,7 @@ contract("Sale", ([admin, alice, bob, carol, david]) => {
 
     it("User cannot deposit in pools that don't exist", async () => {
       const currentTimestamp = (await time.latest()).toNumber() + 300
-      await expectRevert(mockIFO.depositPool("3", mockLP.address, parseEther("0"), "0", currentTimestamp, { from: bob }), "Deposit: Pool not set");
+      await expectRevert(mockIFO.depositPool("4", mockLP.address, parseEther("0"), "0", currentTimestamp, { from: bob }), "Deposit: Pool not set");
     });
 
     it("User cannot deposit tokens that are not allowed", async () => {
@@ -240,9 +306,30 @@ contract("Sale", ([admin, alice, bob, carol, david]) => {
       assert.equal(result[0][0].toString(), String(parseEther("200")));
     });
 
+    it("User (Bob) deposits in other pools(pool1, pool2, pool3)", async () => {
+      await usdc.faucet(bob, parseUnits("10000", 6), {
+        from: bob,
+      });
+      await usdc.approve(mockIFO.address, parseUnits("10000", 6), {
+        from: bob,
+      });
+
+      await time.increaseTo(_startTime1);
+      let currentTimestamp = (await time.latest()).toNumber() + 300
+      await mockIFO.depositPool("1", usdc.address, parseUnits("500", 6), parseEther("500"), currentTimestamp, { from: bob });
+
+      await time.increaseTo(_startTime2);
+      currentTimestamp = (await time.latest()).toNumber() + 300
+      await mockIFO.depositPool("2", usdc.address, parseUnits("500", 6), parseEther("500"), currentTimestamp, { from: bob });
+
+      await time.increaseTo(_startTime3);
+      currentTimestamp = (await time.latest()).toNumber() + 300
+      await mockIFO.depositPool("3", usdc.address, parseUnits("500", 6), parseEther("500"), currentTimestamp, { from: bob });
+    });
+
     it("Bob harvests for pool0", async () => {
       // Go to end time
-      await time.increaseTo(_endTime);
+      await time.increaseTo(_endTime3);
 
       // Allow harvest
       result = await mockIFO.flipHarvestAllowedStatus({ from: admin });
@@ -321,6 +408,33 @@ contract("Sale", ([admin, alice, bob, carol, david]) => {
       // Verify user has claimed
       result = await mockIFO.viewUserInfo(david, ["0"]);
       assert.equal(result[1][0], true);
+    });
+
+    it("Vesting schedule id is computed correctly", async () => {
+      await mockIFO.harvestPool("3", { from: bob });
+      await mockIFO.harvestPool("1", { from: bob });
+
+      const vestingScheduldId1 = await mockIFO.computeVestingScheduleIdForAddressAndPid(bob, 1)
+      const vestingScheduldId2 = await mockIFO.computeVestingScheduleIdForAddressAndPid(bob, 2)
+      const vestingScheduldId3 = await mockIFO.computeVestingScheduleIdForAddressAndPid(bob, 3)
+
+      const vestingSchedule1 = await mockIFO.getVestingSchedule(vestingScheduldId1)
+      let vestingSchedule2 = await mockIFO.getVestingSchedule(vestingScheduldId2)
+      const vestingSchedule3 = await mockIFO.getVestingSchedule(vestingScheduldId3)
+
+      assert.equal(vestingSchedule1.beneficiary, bob);
+      assert.equal(vestingSchedule1.pid, "1");
+
+      assert.equal(vestingSchedule2.isVestingInitialized, false);
+      assert.equal(vestingSchedule2.pid, "0");
+
+      assert.equal(vestingSchedule3.beneficiary, bob);
+      assert.equal(vestingSchedule3.pid, "3");
+
+      await mockIFO.harvestPool("2", { from: bob });
+      vestingSchedule2 = await mockIFO.getVestingSchedule(vestingScheduldId2)
+      assert.equal(vestingSchedule2.beneficiary, bob);
+      assert.equal(vestingSchedule2.pid, "2");
     });
   });
 
